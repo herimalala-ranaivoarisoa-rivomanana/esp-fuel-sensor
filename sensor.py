@@ -1,8 +1,21 @@
 from machine import Pin, time_pulse_us
 import time
+import ucollections
+from wifi import load_config
+from supabase_client import send_to_supabase
 
 trig = Pin(5, Pin.OUT)  # D1
 echo = Pin(4, Pin.IN)   # D2
+
+# Historique des mesures (médian)
+HISTORY_SIZE = 5
+readings = ucollections.deque((), HISTORY_SIZE)
+filtered_value = None
+ALPHA = 0.2  # Filtre exponentiel (0.1 = très lisse, 0.5 = réactif)
+
+cfg = load_config()
+SEND_INTERVAL = 60  # secondes
+last_sent = 0
 
 def mesure_distance():
     trig.value(0)
@@ -19,10 +32,32 @@ def mesure_distance():
     distance_cm = (duree / 2) * 0.0343
     return distance_cm
 
+def get_median(values):
+    sorted_vals = sorted(values)
+    n = len(sorted_vals)
+    if n % 2 == 1:
+        return sorted_vals[n // 2]
+    else:
+        return (sorted_vals[n // 2 - 1] + sorted_vals[n // 2]) / 2
+
 while True:
     dist = mesure_distance()
     if dist:
-        print("Distance:", dist, "cm")
+        readings.append(dist)
+        median = get_median(readings)
+
+        global filtered_value
+        if filtered_value is None:
+            filtered_value = median
+        else:
+            filtered_value = ALPHA * median + (1 - ALPHA) * filtered_value
+
+        print("Mesure brute:", dist, "cm | Médiane:", median, "cm | Filtrée:", round(filtered_value, 2), "cm")
+
+        if time.time() - last_sent > SEND_INTERVAL:
+            send_to_supabase(cfg["device_id"], round(filtered_value, 2), time.time())
+            last_sent = time.time()
     else:
         print("Mesure échouée")
+
     time.sleep(1)
