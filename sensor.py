@@ -9,7 +9,7 @@ from calibration_manager import update_calibration
 trig = Pin(5, Pin.OUT)  # D1
 echo = Pin(4, Pin.IN)   # D2
 
-# Taille historique pour médiane
+# Historique pour médiane
 HISTORY_SIZE = 5
 readings = ucollections.deque((), HISTORY_SIZE)
 
@@ -18,8 +18,8 @@ ALPHA = 0.2  # Filtre exponentiel
 
 cfg = load_config()
 
-SEND_INTERVAL = 60  # Intervalle d’envoi
-DELTA_VOLUME = 1.0  # Seuil de variation minimale (litres)
+SEND_INTERVAL = 60  # Intervalle en secondes
+DELTA_VOLUME = 1.0  # Seuil variation minimale volume (litres)
 
 last_sent = 0
 last_sent_volume = None
@@ -74,6 +74,7 @@ def level_to_volume(level_cm):
 
     # ✅ Hors plage → pas de volume
     if level_cm < min_level or level_cm > max_level:
+        print(f"⚠️ Mesure {round(level_cm,2)} cm hors plage calibration ({min_level}-{max_level} cm)")
         return None
 
     # Interpolation linéaire
@@ -109,11 +110,11 @@ def process_sensor_data():
             min_level = calibration["points"][0]["level"] if calibration else None
             max_level = calibration["points"][-1]["level"] if calibration else None
 
-            print("Niveau:", round(filtered_value, 2), "cm | Volume:", volume, "L")
+            print("Niveau:", round(filtered_value, 2), "cm | Volume:", volume if volume is not None else "N/A", "L")
 
             # Vérifications avant envoi
             if volume is None:
-                print("⚠️ Volume non valide ou hors plage, données non envoyées.")
+                print("⚠️ Volume non valide, données non envoyées.")
             elif min_level is not None and (filtered_value < min_level or filtered_value > max_level):
                 print(f"⚠️ Niveau hors plage calibration ({min_level}-{max_level} cm), données non envoyées.")
             elif time.time() - last_sent > SEND_INTERVAL:
