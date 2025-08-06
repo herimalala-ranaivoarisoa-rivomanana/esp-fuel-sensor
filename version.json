@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "files": [
+    "boot.py",
+    "main.py",
+    "wifi.py",
+    "ota.py",
+    "sensor.py",
+    "MainConfig.py"
+  ]
+}
