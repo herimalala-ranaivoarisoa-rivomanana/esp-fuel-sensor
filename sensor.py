@@ -54,8 +54,10 @@ def get_median(values):
     else:
         return (sorted_vals[n // 2 - 1] + sorted_vals[n // 2]) / 2
 
-# Boucle principale
-while True:
+def process_sensor_data():
+    """Effectue une mesure, la filtre et l'envoie si nécessaire."""
+    global filtered_value, last_sent
+
     dist = mesure_distance()
     if dist:
         readings.append(dist)
@@ -63,19 +65,21 @@ while True:
 
         if median is not None:
             # Filtrage exponentiel
-            global filtered_value
             if filtered_value is None:
                 filtered_value = median
             else:
                 filtered_value = ALPHA * median + (1 - ALPHA) * filtered_value
 
-            print("Mesure brute:", dist, "cm | Médiane:", median, "cm | Filtrée:", round(filtered_value, 2), "cm")
+            print("Mesure brute:", round(dist, 2), "cm | Médiane:", round(median, 2), "cm | Filtrée:", round(filtered_value, 2), "cm")
 
             # Envoi vers Supabase à intervalle régulier
             if time.time() - last_sent > SEND_INTERVAL:
-                send_to_supabase(cfg["device_id"], round(filtered_value, 2), time.time())
+                send_to_supabase(cfg.get("device_id"), round(filtered_value, 2), time.time())
                 last_sent = time.time()
     else:
-        print("Mesure échouée")
+        print("❌ Mesure échouée")
 
+# Boucle principale
+while True:
+    process_sensor_data()
     time.sleep(1)

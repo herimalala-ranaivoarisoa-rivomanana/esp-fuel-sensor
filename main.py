@@ -1,7 +1,8 @@
-import socket
 import machine
-from wifi import save_config, setup_wifi
+import socket
 import ota
+from wifi import save_config, setup_wifi
+from boot import check_for_commands # Importer la fonction depuis boot
 
 def web_page():
     return """<!DOCTYPE html>
@@ -17,11 +18,11 @@ def web_page():
 </body>
 </html>"""
 
-def start_server():
+def start_config_server():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind(('0.0.0.0', 80))
     s.listen(5)
-    print("🌐 Serveur HTTP démarré")
+    print("🌐 Serveur de configuration démarré sur http://192.168.4.1")
 
     while True:
         conn, addr = s.accept()
@@ -42,9 +43,12 @@ def start_server():
             conn.sendall(web_page())
             conn.close()
 
+# --- Logique principale ---
 if setup_wifi():
-    ota.ota_update()
-    print("📡 Lancement capteur...")
-    import sensor
+    check_for_commands() # Vérifier les commandes après connexion
+    ota.ota_update()     # Vérifier les mises à jour OTA
+    print("📡 Lancement du capteur...")
+    import sensor        # Lancer l'application principale
 else:
-    start_server()
+    # Si le WiFi n'est pas configuré, lancer le serveur de configuration
+    start_config_server()
