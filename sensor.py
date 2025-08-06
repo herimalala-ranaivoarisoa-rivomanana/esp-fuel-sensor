@@ -43,7 +43,8 @@ def mesure_distance():
 
 def get_median(values):
     """Retourne la médiane d'une deque."""
-    vals = list(values)  # ✅ Conversion en liste
+    # Convertir la deque en liste manuellement pour la compatibilité
+    vals = [values[i] for i in range(len(values))]
     if not vals:
         return None
     sorted_vals = sorted(vals)
