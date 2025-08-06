@@ -42,8 +42,11 @@ def mesure_distance():
     return distance_cm
 
 def get_median(values):
-    """Retourne la médiane d'une liste de valeurs."""
-    sorted_vals = sorted(values)
+    """Retourne la médiane d'une deque."""
+    vals = list(values)  # ✅ Conversion en liste
+    if not vals:
+        return None
+    sorted_vals = sorted(vals)
     n = len(sorted_vals)
     if n % 2 == 1:
         return sorted_vals[n // 2]
@@ -57,18 +60,20 @@ while True:
         readings.append(dist)
         median = get_median(readings)
 
-        # Filtrage exponentiel
-        if filtered_value is None:
-            filtered_value = median
-        else:
-            filtered_value = ALPHA * median + (1 - ALPHA) * filtered_value
+        if median is not None:
+            # Filtrage exponentiel
+            global filtered_value
+            if filtered_value is None:
+                filtered_value = median
+            else:
+                filtered_value = ALPHA * median + (1 - ALPHA) * filtered_value
 
-        print("Mesure brute:", dist, "cm | Médiane:", median, "cm | Filtrée:", round(filtered_value, 2), "cm")
+            print("Mesure brute:", dist, "cm | Médiane:", median, "cm | Filtrée:", round(filtered_value, 2), "cm")
 
-        # Envoi vers Supabase à intervalle régulier
-        if time.time() - last_sent > SEND_INTERVAL:
-            send_to_supabase(cfg["device_id"], round(filtered_value, 2), time.time())
-            last_sent = time.time()
+            # Envoi vers Supabase à intervalle régulier
+            if time.time() - last_sent > SEND_INTERVAL:
+                send_to_supabase(cfg["device_id"], round(filtered_value, 2), time.time())
+                last_sent = time.time()
     else:
         print("Mesure échouée")
 
