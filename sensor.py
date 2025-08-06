@@ -9,7 +9,7 @@ trig = Pin(5, Pin.OUT)  # D1
 echo = Pin(4, Pin.IN)   # D2
 
 # --- Filtrage ---
-HISTORY_SIZE = 5
+HISTORY_SIZE = 20
 readings = ucollections.deque((), HISTORY_SIZE)
 filtered_value = None
 ALPHA = 0.2  # 0.1 = très lisse, 0.5 = plus réactif
