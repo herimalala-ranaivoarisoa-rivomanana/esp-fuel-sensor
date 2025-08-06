@@ -5,27 +5,29 @@ from wifi import load_config
 from supabase_client import send_to_supabase
 from calibration_manager import update_calibration
 
-# Définition des broches du capteur JSN-SR04T
+# --- Configuration Capteur ---
 trig = Pin(5, Pin.OUT)  # D1
 echo = Pin(4, Pin.IN)   # D2
 
-# Taille de l'historique pour filtrage médian
+# Taille historique pour médiane
 HISTORY_SIZE = 5
 readings = ucollections.deque((), HISTORY_SIZE)
 
 filtered_value = None
-ALPHA = 0.2  # Coefficient du filtre exponentiel
+ALPHA = 0.2  # Filtre exponentiel
 
 cfg = load_config()
 
-SEND_INTERVAL = 60  # secondes entre envois
-DELTA_VOLUME = 1.0  # seuil variation minimale volume (litres)
+SEND_INTERVAL = 60  # Intervalle d’envoi
+DELTA_VOLUME = 1.0  # Seuil de variation minimale (litres)
 
 last_sent = 0
 last_sent_volume = None
 
-# Chargement initial de la calibration depuis Supabase (ou locale)
+# Calibration initiale
 calibration = update_calibration()
+
+# --- Fonctions ---
 
 def mesure_distance():
     """Mesure la distance en cm avec JSN-SR04T."""
@@ -62,17 +64,30 @@ def get_median(values):
         return (sorted_vals[n // 2 - 1] + sorted_vals[n // 2]) / 2
 
 def level_to_volume(level_cm):
-    """Convertit un niveau en volume par interpolation linéaire."""
+    """Convertit un niveau en volume par interpolation linéaire avec bornes."""
     if not calibration or "points" not in calibration:
         return None
+
     points = calibration["points"]
+    min_level = points[0]["level"]
+    max_level = points[-1]["level"]
+
+    # ✅ Hors plage → pas de volume
+    if level_cm < min_level or level_cm > max_level:
+        return None
+
+    # Interpolation linéaire
     for i in range(len(points) - 1):
-        p1, p2 = points[i], points[i+1]
+        p1, p2 = points[i], points[i + 1]
         if p1["level"] <= level_cm <= p2["level"]:
             ratio = (level_cm - p1["level"]) / (p2["level"] - p1["level"])
             return p1["volume"] + ratio * (p2["volume"] - p1["volume"])
-    # Si hors plage haute, retourne dernier volume connu
-    return points[-1]["volume"]
+
+    # Exactement au max
+    if level_cm == max_level:
+        return points[-1]["volume"]
+
+    return None
 
 def process_sensor_data():
     global filtered_value, last_sent, last_sent_volume
@@ -90,7 +105,7 @@ def process_sensor_data():
 
             volume = level_to_volume(filtered_value)
 
-            # Récupération bornes calibration
+            # Bornes calibration
             min_level = calibration["points"][0]["level"] if calibration else None
             max_level = calibration["points"][-1]["level"] if calibration else None
 
@@ -98,11 +113,10 @@ def process_sensor_data():
 
             # Vérifications avant envoi
             if volume is None:
-                print("⚠️ Volume non valide, données non envoyées.")
+                print("⚠️ Volume non valide ou hors plage, données non envoyées.")
             elif min_level is not None and (filtered_value < min_level or filtered_value > max_level):
                 print(f"⚠️ Niveau hors plage calibration ({min_level}-{max_level} cm), données non envoyées.")
             elif time.time() - last_sent > SEND_INTERVAL:
-                # Hystérésis : envoyer uniquement si variation significative
                 if last_sent_volume is None or abs(volume - last_sent_volume) >= DELTA_VOLUME:
                     send_to_supabase(
                         cfg.get("device_id"),
@@ -117,6 +131,7 @@ def process_sensor_data():
     else:
         print("❌ Mesure échouée")
 
+# --- Boucle principale ---
 while True:
     process_sensor_data()
     time.sleep(1)
