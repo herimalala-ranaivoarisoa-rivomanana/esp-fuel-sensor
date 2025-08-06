@@ -45,8 +45,7 @@ def connect_sta(ssid, password, timeout=10):
 def start_ap():
     ap = network.WLAN(network.AP_IF)
     ap.active(True)
-    ap.config(essid="ESP_Config", password="12345678")
-    print("🔑 AP démarré → SSID=ESP_Config / Pass=12345678")
+    ap.config(essid="TLS", password="Tls100Sor")
 
 def setup_wifi():
     config = load_config()

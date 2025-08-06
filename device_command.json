@@ -1,4 +1,4 @@
 {
     "target_device": "ESP001",
-    "force_ap": true
+    "force_ap": false
 }
