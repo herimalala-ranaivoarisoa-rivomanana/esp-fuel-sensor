@@ -10,7 +10,8 @@ TABLE_NAME = "fuel_levels"
 MAX_RETRIES = 3
 RETRY_DELAY = 5  # secondes
 
-def send_to_supabase(device_id, distance, timestamp):
+def send_to_supabase(device_id, distance, volume, timestamp):
+    """Envoie les données vers Supabase avec retry automatique."""
     url = f"{SUPABASE_URL}/rest/v1/{TABLE_NAME}"
     headers = {
         "apikey": SUPABASE_KEY,
@@ -21,14 +22,15 @@ def send_to_supabase(device_id, distance, timestamp):
     data = {
         "device_id": device_id,
         "distance_cm": distance,
+        "volume_liters": volume,
         "timestamp": timestamp
     }
 
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            response = urequests.post(url, headers=headers, data=ujson.dumps(data))
-            status = response.status_code
-            response.close()
+            resp = urequests.post(url, headers=headers, data=ujson.dumps(data))
+            status = resp.status_code
+            resp.close()
 
             if status in (200, 201):
                 print(f"✅ Donnée envoyée à Supabase (tentative {attempt})")
@@ -42,3 +44,4 @@ def send_to_supabase(device_id, distance, timestamp):
 
     print("🚫 Échec total de l’envoi après plusieurs tentatives")
     return False
+    
