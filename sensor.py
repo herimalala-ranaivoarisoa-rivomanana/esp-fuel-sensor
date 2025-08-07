@@ -10,7 +10,7 @@ trig = Pin(5, Pin.OUT)  # D1
 echo = Pin(4, Pin.IN)   # D2
 
 # Historique pour médiane
-HISTORY_SIZE = 5
+HISTORY_SIZE = 20
 readings = ucollections.deque((), HISTORY_SIZE)
 
 filtered_value = None
