@@ -12,7 +12,16 @@ def ota_update():
 
         print("🔍 Vérification version OTA...")
         r = urequests.get(VERSION_URL)
-        data = r.json()
+        if r.status_code == 200:
+            try:
+                data = r.json()
+            except Exception as json_err:
+                print("❌ Erreur parsing JSON version:", r.text)
+                raise json_err
+        else:
+            print("❌ Erreur HTTP version:", r.status_code)
+            r.close()
+            return
         r.close()
 
         if data["version"] != current_version:
@@ -24,6 +33,9 @@ def ota_update():
                     with open(filename, "w") as f:
                         f.write(r.text)
                     print("✅", filename, "mis à jour.")
+                else:
+                    print(f"❌ Erreur HTTP lors du téléchargement de {filename}: {r.status_code}")
+                    print(f"Contenu reçu: {r.text}")
                 r.close()
 
             save_config(cfg["wifi_ssid"], cfg["wifi_password"], sta=True, version=data["version"])

@@ -15,7 +15,16 @@ def check_for_commands():
 
         print("🔍 Vérification des commandes distantes...")
         r = urequests.get(COMMAND_URL)
-        cmd = r.json()
+        if r.status_code == 200:
+            try:
+                cmd = r.json()
+            except Exception as json_err:
+                print("❌ Erreur parsing JSON commande:", r.text)
+                raise json_err
+        else:
+            print("❌ Erreur HTTP commande:", r.status_code)
+            r.close()
+            return
         r.close()
 
         if cmd.get("target_device") == device_id and cmd.get("force_ap"):
