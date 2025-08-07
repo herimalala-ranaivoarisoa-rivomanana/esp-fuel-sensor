@@ -24,8 +24,10 @@ DELTA_VOLUME = 1.0  # Seuil variation minimale volume (litres)
 last_sent = 0
 last_sent_volume = None
 
-# Calibration initiale
-calibration = update_calibration()
+# Calibration initiale : toujours utiliser la copie locale
+from calibration_manager import load_local_calibration, update_calibration
+update_calibration()  # Met à jour la calibration locale si besoin, mais ne retourne plus la calibration à utiliser
+calibration = load_local_calibration()  # Toujours charger la calibration locale
 
 # --- Fonctions ---
 

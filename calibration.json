@@ -1,0 +1,11 @@
+{
+    "version": 1,
+    "points": [
+        {"level": 0, "volume": 0},
+        {"level": 10, "volume": 5},
+        {"level": 20, "volume": 12},
+        {"level": 30, "volume": 20},
+        {"level": 40, "volume": 29},
+        {"level": 50, "volume": 40}
+    ]
+}

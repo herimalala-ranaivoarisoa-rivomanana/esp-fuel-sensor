@@ -67,19 +67,24 @@ def save_local_calibration(data):
 def update_calibration():
     """
     Vérifie la version de la calibration locale et la met à jour si une version
-    plus récente est disponible dans Supabase.
+    plus récente est disponible dans Supabase. Utilise toujours la calibration locale
+    si la récupération distante échoue (ex : mode AP ou pas de réseau).
     """
     remote = fetch_calibration_from_supabase()
     local = load_local_calibration()
 
     if not remote:
-        # Si pas de remote, on garde local si dispo
-        return local
+        if local:
+            print("⚠️ Utilisation de la calibration locale (pas d'accès à Supabase ou mode AP)")
+            return local
+        else:
+            print("🚫 Aucune calibration disponible (ni distante, ni locale) !")
+            return None
 
     if not local or remote["version"] > local.get("version", 0):
-        print("⬇️ Nouvelle version de calibration détectée, mise à jour...")
+        print(f"⬇️ Nouvelle version de calibration détectée (v{remote['version']}), mise à jour locale...")
         save_local_calibration(remote)
         return remote
     
-    print("✅ Calibration locale déjà à jour")
+    print(f"✅ Calibration locale déjà à jour (v{local.get('version')})")
     return local
