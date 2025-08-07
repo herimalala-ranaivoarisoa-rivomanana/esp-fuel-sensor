@@ -158,4 +158,4 @@ def process_sensor_data():
 # --- Boucle principale ---
 while True:
     process_sensor_data()
-    time.sleep(1)
+    time.sleep(3)
