@@ -1,6 +1,24 @@
 from machine import Pin, time_pulse_us
 import time
 import ucollections
+
+# --- Historique 24h pour la page /mesure ---
+MESURE_HISTORY = []  # Liste de tuples (timestamp, niveau_cm)
+HISTORY_DURATION = 24*3600  # 24h en secondes
+
+def update_mesure_history(value):
+    now = time.time()
+    MESURE_HISTORY.append((now, value))
+    # Nettoyer l'historique pour ne garder que les 24 dernières heures
+    cutoff = now - HISTORY_DURATION
+    while MESURE_HISTORY and MESURE_HISTORY[0][0] < cutoff:
+        MESURE_HISTORY.pop(0)
+
+def get_mesure_history():
+    now = time.time()
+    cutoff = now - HISTORY_DURATION
+    return [(ts, val) for ts, val in MESURE_HISTORY if ts >= cutoff]
+
 from wifi import load_config
 from supabase_client import send_to_supabase
 from calibration_manager import update_calibration
@@ -114,6 +132,9 @@ def process_sensor_data():
                 filtered_value = median
             else:
                 filtered_value = ALPHA * median + (1 - ALPHA) * filtered_value
+
+            # Historique 24h pour la page /mesure
+            update_mesure_history(filtered_value)
 
             volume = level_to_volume(filtered_value)
 

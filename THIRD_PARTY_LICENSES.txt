@@ -1,0 +1,2 @@
+Chart.js (https://www.chartjs.org/) - CDN loaded for mesure.html
+License: MIT
