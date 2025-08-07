@@ -1,5 +1,5 @@
 {
-  "version": "2.0.2",
+  "version": "4.0.0",
   "files": [
     "boot.py",
     "main.py",
@@ -8,6 +8,7 @@
     "sensor.py",
     "MainConfig.py",
     "supabase_client.py",
-    "calibration_manager.py"
+    "calibration_manager.py",
+    "device_command.json"
   ]
 }
