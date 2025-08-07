@@ -1,4 +1,5 @@
 {
     "target_device": "ESP001",
-    "force_ap": false
+    "force_ap": false,
+    "send_out_of_range": true
 }

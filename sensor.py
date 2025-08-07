@@ -18,6 +18,15 @@ ALPHA = 0.2  # Filtre exponentiel
 
 cfg = load_config()
 
+# Charger le flag d'envoi hors plages depuis device_command.json
+import ujson
+try:
+    with open("device_command.json") as f:
+        device_cmd = ujson.load(f)
+        SEND_OUT_OF_RANGE = device_cmd.get("send_out_of_range", False)
+except:
+    SEND_OUT_OF_RANGE = False
+
 SEND_INTERVAL = 60  # Intervalle en secondes
 DELTA_VOLUME = 1.0  # Seuil variation minimale volume (litres)
 
@@ -116,9 +125,21 @@ def process_sensor_data():
 
             # Vérifications avant envoi
             if volume is None:
-                print("⚠️ Volume non valide, données non envoyées.")
-            elif min_level is not None and (filtered_value < min_level or filtered_value > max_level):
-                print(f"⚠️ Niveau hors plage calibration ({min_level}-{max_level} cm), données non envoyées.")
+                print("⚠️ Mesure hors plage calibration")
+                # Décision d'envoi selon le flag
+                if SEND_OUT_OF_RANGE:
+                    print("➡️ Envoi mesure hors plage à la base de données (flag activé)")
+                    send_to_supabase(
+                        cfg.get("device_id"),
+                        round(filtered_value, 2),
+                        None,
+                        time.time()
+                    )
+                    last_sent = time.time()
+                    last_sent_volume = None
+                else:
+                    print("🚫 Mesure hors plage NON envoyée (flag désactivé)")
+                return
             elif time.time() - last_sent > SEND_INTERVAL:
                 if last_sent_volume is None or abs(volume - last_sent_volume) >= DELTA_VOLUME:
                     send_to_supabase(
